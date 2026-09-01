@@ -29,12 +29,20 @@
       overflow: hidden;
     }
 
+    /*
+      Notion controls the OUTER iframe height, and our page cannot resize that
+      cross-origin container. So we pin our own viewport to the iframe and
+      centre the 16:10 stage inside it.
+    */
     body {
-      display: grid;
-      place-items: center;
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 100vw;
       height: 100vh;
-      height: 100dvh;
+      overflow: hidden;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
 
@@ -43,23 +51,16 @@
     .scene {
       position: relative;
 
-      /* Always fit the ENTIRE 1586×992 scene inside the current viewport/embed.
-         Width is limited by both the available width and the available height,
-         so changing the Notion embed size won't crop Biscuit or the room. */
-      width: min(
-        100vw,
-        1586px,
-        calc(100vh * 1586 / 992)
-      );
-      width: min(
-        100vw,
-        1586px,
-        calc(100dvh * 1586 / 992)
-      );
-
+      /*
+        1586 / 992 = 1.59879.
+        IMPORTANT: use the pre-calculated vh value rather than CSS division;
+        some embedded Chromium/WebView environments reject calc() division
+        and then the stage falls back to full width, which causes cropping.
+      */
+      width: min(100vw, 159.879vh, 1586px);
       aspect-ratio: 1586 / 992;
-      max-height: 100vh;
-      max-height: 100dvh;
+
+      flex: 0 0 auto;
       overflow: hidden;
       isolation: isolate;
       background: #2c1d0e;
@@ -133,7 +134,7 @@
     }
 
     .dialogue.crumb-control {
-      width: 48%;
+      width: 45%;
       top: 29.2%;
       left: 6.4%;
     }
@@ -347,17 +348,6 @@
     }
 
 
-    @media (max-aspect-ratio: 1586/992) {
-      .crumb-input {
-        height: clamp(32px, 6.2vh, 68px);
-        font-size: clamp(10px, 2.05vh, 20px);
-      }
-
-      .floor-thought {
-        font-size: clamp(15px, 3.25vh, 33px);
-      }
-    }
-
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 1ms !important;
@@ -417,7 +407,7 @@
         swipeLeft: 'Biscuit-swipe-left.png',
         done: 'Biscuit-done.png',
         found: 'text-found-me.png',
-        crumbControl: 'text-crumb-control.png',
+        crumbControl: 'text-crumb-control-new.png',
         tidy: 'text-tidy.png'
       };
 
