@@ -96,9 +96,9 @@
     .sprite.done  { height: 49.6%; left: 62.8%; bottom: 5.5%; }
 
     /* Reduced swipe sprites so Biscuit stays grounded on the visible floor. */
-    .sprite.swipe-right  { height: 50%; left: 63.8%; bottom: 0.0%; z-index: 11; }
-    .sprite.swipe-center { height: 52%; left: 59.6%; bottom: -0.3%; z-index: 11; }
-    .sprite.swipe-left   { height: 50%; left: 54.8%; bottom: 0.0%; z-index: 11; }
+    .sprite.swipe-right  { height: 50%; left: 55.5%; bottom: 0.0%; z-index: 11; }
+    .sprite.swipe-center { height: 52%; left: 51.2%; bottom: -0.3%; z-index: 11; }
+    .sprite.swipe-left   { height: 50%; left: 46.5%; bottom: 0.0%; z-index: 11; }
 
     .dialogue {
       position: absolute;
@@ -244,7 +244,7 @@
     .floor-thought {
       position: absolute;
       left: 50%;
-      top: 82.5%;
+      top: 86.5%;
       width: 46%;
       transform: translateX(-50%);
       z-index: 9;
@@ -343,7 +343,7 @@
     <img
       id="biscuit"
       class="sprite back clickable"
-      src="Biscuit-back.png"
+      src="Biscuit-idle.png"
       alt="Biscuit sweeping in the café back room"
       draggable="false"
       tabindex="0"
@@ -377,7 +377,7 @@
   <script>
     (() => {
       const ASSETS = {
-        back: 'Biscuit-back.png',
+        back: 'Biscuit-idle.png',
         turn: 'Biscuit-turn.png',
         front: 'Biscuit-front.png',
         swipeRight: 'Biscuit-swipe-right.png',
