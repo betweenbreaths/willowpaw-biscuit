@@ -15,7 +15,6 @@
       --brown-mid: #8f5b2d;
       --shadow: rgba(39, 23, 12, 0.48);
 
-      /* Character placement — easiest knobs to tweak later */
       --character-x: 64%;
       --character-bottom: 6.2%;
     }
@@ -57,7 +56,6 @@
       pointer-events: none;
     }
 
-    /* Soft vignette helps UI feel embedded without changing the art. */
     .scene::after {
       content: "";
       position: absolute;
@@ -97,11 +95,10 @@
     .sprite.front { height: 50.2%; left: 64%; bottom: 5.8%; }
     .sprite.done  { height: 52.0%; left: 63.3%; bottom: 5.5%; }
 
-    /* Swipe canvases are taller because the broom extends toward camera.
-       Different x values keep Biscuit's BODY in roughly the same place. */
-    .sprite.swipe-right  { height: 68%; left: 68.2%; bottom: 1.6%; z-index: 11; }
-    .sprite.swipe-center { height: 71%; left: 62.2%; bottom: 1.1%; z-index: 11; }
-    .sprite.swipe-left   { height: 68%; left: 54.3%; bottom: 1.4%; z-index: 11; }
+    /* Reduced swipe sprites so Biscuit stays grounded on the visible floor. */
+    .sprite.swipe-right  { height: 39%; left: 65.8%; bottom: 0.2%; z-index: 11; }
+    .sprite.swipe-center { height: 41%; left: 61.8%; bottom: -0.2%; z-index: 11; }
+    .sprite.swipe-left   { height: 39%; left: 57.0%; bottom: 0.2%; z-index: 11; }
 
     .dialogue {
       position: absolute;
@@ -194,6 +191,7 @@
     }
 
     .input-wrap.nudge { animation: nudge 260ms ease; }
+
     @keyframes nudge {
       0%, 100% { transform: translateX(0); }
       25% { transform: translateX(-1.2%); }
@@ -225,9 +223,18 @@
 
     .sweep-button img { display: block; width: 100%; height: auto; }
 
-    .sweep-button:hover { filter: brightness(1.035) drop-shadow(0 .45vw .22vw rgba(49,29,13,.30)); }
-    .sweep-button:active { transform: translateY(.5%) scale(.985); }
-    .sweep-button:focus-visible { outline: 3px solid rgba(255, 232, 190, .88); outline-offset: 5px; }
+    .sweep-button:hover {
+      filter: brightness(1.035) drop-shadow(0 .45vw .22vw rgba(49,29,13,.30));
+    }
+
+    .sweep-button:active {
+      transform: translateY(.5%) scale(.985);
+    }
+
+    .sweep-button:focus-visible {
+      outline: 3px solid rgba(255, 232, 190, .88);
+      outline-offset: 5px;
+    }
 
     @keyframes buttonIn {
       to { opacity: 1; transform: translateY(0) scale(1); }
@@ -243,7 +250,7 @@
       z-index: 9;
       text-align: center;
       color: #f7dfb7;
-      font-size: clamp(10px, 1.35vw, 22px);
+      font-size: clamp(15px, 2.025vw, 33px);
       font-weight: 800;
       line-height: 1.25;
       letter-spacing: .025em;
@@ -257,7 +264,10 @@
       opacity: 0;
     }
 
-    .floor-thought.visible { animation: thoughtIn 260ms ease forwards; }
+    .floor-thought.visible {
+      animation: thoughtIn 260ms ease forwards;
+    }
+
     @keyframes thoughtIn {
       from { opacity: 0; transform: translateX(-50%) translateY(10%); }
       to   { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -312,7 +322,9 @@
       pointer-events: none !important;
     }
 
-    @keyframes fadeOut { to { opacity: 0; } }
+    @keyframes fadeOut {
+      to { opacity: 0; }
+    }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -323,6 +335,7 @@
     }
   </style>
 </head>
+
 <body>
   <main class="scene" id="scene" aria-label="Willowpaw Café back room">
     <img class="backroom" src="back-room.png" alt="" />
@@ -376,13 +389,13 @@
         tidy: 'text-tidy.png'
       };
 
-      // Timing in milliseconds. Easy to tweak after you test it in Notion.
       const TIMING = {
-        foundMessage: 2200,
-        crumbIntroBeforeInput: 1800,
+        foundMessage: 1100,
+        crumbIntroBeforeInput: 900,
         thoughtPause: 520,
         swipeFrame: 390,
-        afterSwipe: 320
+        afterSwipe: 320,
+        tidyBeforeReset: 2000
       };
 
       const biscuit = document.getElementById('biscuit');
@@ -396,11 +409,11 @@
       let phase = 'hidden';
       let timers = [];
 
-      // Preload everything so sprite swaps don't flash.
       Object.values(ASSETS).forEach(src => {
         const img = new Image();
         img.src = src;
       });
+
       new Image().src = 'button.png';
       new Image().src = 'back-room.png';
 
@@ -420,12 +433,36 @@
       const showDialogue = (name, extraClass = '') => {
         dialogue.className = `dialogue ${extraClass}`.trim();
         dialogue.src = ASSETS[name];
-        // Restart pop animation reliably.
         void dialogue.offsetWidth;
         dialogue.classList.add('show-pop');
       };
 
       const hideDialogue = () => dialogue.classList.add('fade-out');
+
+      function resetScene() {
+        timers.forEach(id => window.clearTimeout(id));
+        timers = [];
+        phase = 'hidden';
+
+        biscuit.src = ASSETS.back;
+        biscuit.className = 'sprite back clickable';
+        biscuit.setAttribute('tabindex', '0');
+        biscuit.setAttribute('role', 'button');
+        biscuit.setAttribute('aria-label', 'Biscuit');
+
+        dialogue.src = ASSETS.found;
+        dialogue.className = 'dialogue';
+
+        inputWrap.className = 'input-wrap';
+        sweepButton.className = 'sweep-button';
+        crumbInput.value = '';
+
+        floorThought.className = 'floor-thought';
+        floorThought.innerHTML = '';
+
+        particleLayer.className = 'particle-layer';
+        particleLayer.innerHTML = '';
+      }
 
       function meetBiscuit() {
         if (phase !== 'hidden') return;
@@ -450,6 +487,7 @@
 
       function renderThought(text) {
         floorThought.innerHTML = '';
+
         [...text].forEach((char, index) => {
           const span = document.createElement('span');
           span.className = 'crumb-char';
@@ -457,46 +495,66 @@
           span.dataset.index = index;
           floorThought.appendChild(span);
         });
+
         floorThought.className = 'floor-thought visible';
       }
 
       function makePixelCrumbs() {
         const sceneRect = document.getElementById('scene').getBoundingClientRect();
         const thoughtRect = floorThought.getBoundingClientRect();
-        const centerX = ((thoughtRect.left + thoughtRect.width / 2) - sceneRect.left) / sceneRect.width * 100;
-        const centerY = ((thoughtRect.top + thoughtRect.height / 2) - sceneRect.top) / sceneRect.height * 100;
+
+        const centerX =
+          ((thoughtRect.left + thoughtRect.width / 2) - sceneRect.left) /
+          sceneRect.width * 100;
+
+        const centerY =
+          ((thoughtRect.top + thoughtRect.height / 2) - sceneRect.top) /
+          sceneRect.height * 100;
 
         particleLayer.innerHTML = '';
-        const count = Math.min(28, Math.max(14, Math.floor(floorThought.textContent.length / 2.3)));
+
+        const count = Math.min(
+          28,
+          Math.max(14, Math.floor(floorThought.textContent.length / 2.3))
+        );
 
         for (let i = 0; i < count; i++) {
           const p = document.createElement('i');
           p.className = 'pixel-crumb';
+
           p.style.left = `${centerX + (Math.random() - .5) * 20}%`;
           p.style.top = `${centerY + (Math.random() - .5) * 3}%`;
           p.style.setProperty('--px', `${(-45 - Math.random() * 55)}px`);
           p.style.setProperty('--py', `${(8 + Math.random() * 34)}px`);
           p.style.setProperty('--delay', `${Math.random() * 220}ms`);
-          if (Math.random() > .55) p.style.background = '#efc27e';
+
+          if (Math.random() > .55) {
+            p.style.background = '#efc27e';
+          }
+
           particleLayer.appendChild(p);
         }
       }
 
       function crumbleText() {
         const chars = floorThought.querySelectorAll('.crumb-char');
+
         chars.forEach((span, i) => {
           const intensity = 18 + Math.random() * 42;
+
           span.style.setProperty('--dx', `${-(intensity + i * .35)}px`);
           span.style.setProperty('--dy', `${8 + Math.random() * 26}px`);
           span.style.setProperty('--rot', `${-35 + Math.random() * 70}deg`);
           span.style.setProperty('--delay', `${Math.random() * 180}ms`);
           span.classList.add('crumbling');
         });
+
         makePixelCrumbs();
       }
 
       function beginSweep() {
         if (phase !== 'ready') return;
+
         const value = crumbInput.value.trim();
 
         if (!value) {
@@ -508,6 +566,7 @@
         }
 
         phase = 'sweeping';
+
         crumbInput.blur();
         inputWrap.classList.add('fade-out');
         sweepButton.classList.add('fade-out');
@@ -517,7 +576,6 @@
         crumbInput.value = '';
 
         later(() => {
-          // Broom starts at Biscuit's right, crosses center, ends to her left.
           setSprite('swipeRight', 'swipe-right');
 
           later(() => {
@@ -529,17 +587,28 @@
 
               later(() => {
                 phase = 'tidy';
+
                 floorThought.classList.add('fade-out');
                 particleLayer.classList.add('fade-out');
+
                 setSprite('done', 'done');
                 showDialogue('tidy', 'tidy');
+
+                window.setTimeout(() => {
+                  resetScene();
+                }, TIMING.tidyBeforeReset);
+
               }, TIMING.swipeFrame + TIMING.afterSwipe);
+
             }, TIMING.swipeFrame);
+
           }, TIMING.swipeFrame);
+
         }, TIMING.thoughtPause);
       }
 
       biscuit.addEventListener('click', meetBiscuit);
+
       biscuit.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
@@ -548,6 +617,7 @@
       });
 
       sweepButton.addEventListener('click', beginSweep);
+
       crumbInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
           event.preventDefault();
